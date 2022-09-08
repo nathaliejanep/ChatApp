@@ -4,6 +4,7 @@ import './App.css';
 const Chat = ({ socket, room, username }) => {
   const [message, setMessage] = useState('');
   const [messageList, setMessageList] = useState([]);
+  const [isTyping, setIsTyping] = useState(false);
   const [userIsTyping, setUserIsTyping] = useState('');
 
   useEffect(() => {
@@ -13,14 +14,21 @@ const Chat = ({ socket, room, username }) => {
       }
 
       setMessageList((prevList) => [...prevList, data]);
-
       console.log('data:', data);
     });
 
+    let timer;
     // receive typing from client
     socket.on('typing', (data) => {
+      clearTimeout(timer);
+      setIsTyping(true);
       setUserIsTyping(data.username);
-      console.log(data, 'is typing...');
+      console.log(data.username, 'is typing...');
+
+      timer = setTimeout(() => {
+        setIsTyping(false);
+        console.log(data.username, 'is not typing...');
+      }, 5000);
     });
   }, [socket, username]);
 
@@ -49,11 +57,9 @@ const Chat = ({ socket, room, username }) => {
     }
   };
 
-  const isTyping = () => {
+  const handleTyping = () => {
     // Send username typing to server
     socket.emit('typing', { username, room });
-
-    console.log('typing');
   };
 
   // map through messagesReceived and display them
@@ -68,15 +74,14 @@ const Chat = ({ socket, room, username }) => {
   return (
     <div>
       <input
-        id="messageInput"
         placeholder="Message..."
         onChange={(e) => {
           setMessage(e.target.value);
         }}
-        onKeyPress={isTyping()}
+        onKeyPress={handleTyping}
         value={message}
       />
-      <p>{userIsTyping} is typing</p>
+      {isTyping ? <p>{userIsTyping} is typing...</p> : ''}
       <button onClick={sendMessage}>Send</button>
       <ul>{renderChat}</ul>
     </div>

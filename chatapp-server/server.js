@@ -37,7 +37,8 @@ io.on('connection', (socket) => {
 
   socket.on('typing', (data) => {
     // Send username typing to client
-    console.log(data);
+
+    console.log(data.username, 'is typing...');
     socket.broadcast.to(data.room).emit('typing', data);
   });
 
