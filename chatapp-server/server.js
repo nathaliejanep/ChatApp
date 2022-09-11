@@ -4,7 +4,11 @@ const http = require('http');
 const cors = require('cors');
 const PORT = 3001;
 const { Server } = require('socket.io');
-
+const {
+  addUser,
+  addUserToRoom,
+  removeUserFromRoom,
+} = require('./utils/userlist');
 app.use(cors());
 
 const server = http.createServer(app);
@@ -15,6 +19,8 @@ const io = new Server(server, {
     methods: ['GET', 'POST'],
   },
 });
+
+// const userList = [];
 
 // Listen for events
 io.on('connection', (socket) => {
@@ -33,13 +39,27 @@ io.on('connection', (socket) => {
       username: 'Bot',
       msg: `${data.username} has joined the chat!`,
     });
-  });
 
-  socket.on('typing', (data) => {
-    // Send username typing to client
+    // Add new user to user list
+    // userList.push({ username: data.username, room: data.room });
+    // console.log('userList:', userList);
+    addUser(socket.id, data.username, data.room);
 
-    console.log(data.username, 'is typing...');
-    socket.broadcast.to(data.room).emit('typing', data);
+    const onlineUsers = addUserToRoom(data.room);
+    // Send user list to frontend
+    io.to(data.room).emit('user_list', onlineUsers);
+
+    socket.on('disconnect', () => {
+      const removedUser = removeUserFromRoom(socket.id);
+      io.to(data.room).emit('receive_message', {
+        username: 'Bot',
+        msg: `${data.username} has left the chat!`,
+      });
+
+      const updatedUsers = onlineUsers.splice(removedUser, 1);
+      io.to(data.room).emit('user_list', updatedUsers);
+      console.log('Removed users', removedUser);
+    });
   });
 
   // Receive message from client, and send it back
@@ -48,8 +68,11 @@ io.on('connection', (socket) => {
     io.to(data.room).emit('receive_message', data); // send to all in room
   });
 
-  socket.on('disconnect', (data) => {
-    console.log(`UserID: ${socket.id} left room: ${data}`);
+  socket.on('typing', (data) => {
+    // Send username typing to client
+
+    console.log(data.username, 'is typing...');
+    socket.broadcast.to(data.room).emit('typing', data);
   });
 });
 

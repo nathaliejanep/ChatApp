@@ -6,6 +6,7 @@ const Chat = ({ socket, room, username }) => {
   const [messageList, setMessageList] = useState([]);
   const [isTyping, setIsTyping] = useState(false);
   const [userIsTyping, setUserIsTyping] = useState('');
+  const [userList, setUserList] = useState([]);
 
   useEffect(() => {
     socket.on('receive_message', (data) => {
@@ -15,6 +16,11 @@ const Chat = ({ socket, room, username }) => {
 
       setMessageList((prevList) => [...prevList, data]);
       console.log('data:', data);
+    });
+
+    socket.on('user_list', (data) => {
+      setUserList(data);
+      console.log('userList:', data);
     });
 
     let timer;
@@ -29,6 +35,10 @@ const Chat = ({ socket, room, username }) => {
         setIsTyping(false);
         console.log(data.username, 'is not typing...');
       }, 5000);
+    });
+
+    socket.on('disconnect', () => {
+      console.log('user disconnected: ', socket.id);
     });
   }, [socket, username]);
 
@@ -63,27 +73,35 @@ const Chat = ({ socket, room, username }) => {
   };
 
   // map through messagesReceived and display them
-  const renderChat = messageList.map((data, index) => {
+  const renderChat = messageList.map((data, i) => {
     return (
-      <li key={index} className={data.isSelf ? 'sender' : 'receiver'}>
+      <li key={i} className={data.isSelf ? 'sender' : 'receiver'}>
         {data.msg} : {data.username}
       </li>
     );
   });
 
+  const renderUserList = userList.map((user, i) => {
+    return <li key={i}>{user.username}</li>;
+  });
+
   return (
     <div>
-      <input
-        placeholder="Message..."
-        onChange={(e) => {
-          setMessage(e.target.value);
-        }}
-        onKeyPress={handleTyping}
-        value={message}
-      />
-      {isTyping ? <p>{userIsTyping} is typing...</p> : ''}
-      <button onClick={sendMessage}>Send</button>
-      <ul>{renderChat}</ul>
+      <div>Online users:</div>
+      <ul>{renderUserList}</ul>
+      <div>
+        <input
+          placeholder="Message..."
+          onChange={(e) => {
+            setMessage(e.target.value);
+          }}
+          onKeyPress={handleTyping}
+          value={message}
+        />
+        <button onClick={sendMessage}>Send</button>
+        <ul>{renderChat}</ul>
+        {isTyping ? <p>{userIsTyping} is typing...</p> : ''}
+      </div>
     </div>
   );
 };
