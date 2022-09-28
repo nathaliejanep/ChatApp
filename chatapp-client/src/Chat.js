@@ -34,7 +34,7 @@ const Chat = ({ socket, room, username }) => {
       timer = setTimeout(() => {
         setIsTyping(false);
         console.log(data.username, 'is not typing...');
-      }, 5000);
+      }, 2000);
     });
 
     socket.on('disconnect', () => {
@@ -81,6 +81,7 @@ const Chat = ({ socket, room, username }) => {
     );
   });
 
+  // map through
   const renderUserList = userList.map((user, i) => {
     return <li key={i}>{user.username}</li>;
   });

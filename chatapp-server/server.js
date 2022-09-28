@@ -45,7 +45,7 @@ io.on('connection', (socket) => {
     // console.log('userList:', userList);
     addUser(socket.id, data.username, data.room);
 
-    const onlineUsers = addUserToRoom(data.room);
+    let onlineUsers = addUserToRoom(data.room);
     // Send user list to frontend
     io.to(data.room).emit('user_list', onlineUsers);
 
@@ -56,9 +56,9 @@ io.on('connection', (socket) => {
         msg: `${data.username} has left the chat!`,
       });
 
-      const updatedUsers = onlineUsers.splice(removedUser, 1);
-      io.to(data.room).emit('user_list', updatedUsers);
-      console.log('Removed users', removedUser);
+      onlineUsers = addUserToRoom(data.room);
+      io.to(data.room).emit('user_list', onlineUsers);
+      console.log('Online users', onlineUsers);
     });
   });
 
